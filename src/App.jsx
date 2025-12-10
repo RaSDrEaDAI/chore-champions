@@ -86,6 +86,12 @@ const getLevelInfo = (lifetimePoints) => {
   return { level, currentThreshold, nextThreshold, progress: Math.min(progress, 100) }
 }
 
+// Garden plots unlock based on level: Level 1 = 2 plots, then +1 plot per level up to 8
+const getUnlockedPlots = (level) => {
+  // Level 1: 2 plots, Level 2: 3, Level 3: 4, ... Level 7+: 8 (all)
+  return Math.min(8, level + 1)
+}
+
 const getSkillLevel = (xp) => {
   for (let i = SKILL_LEVELS.length - 1; i >= 0; i--) {
     if (xp >= SKILL_LEVELS[i].xpRequired) {
@@ -1147,7 +1153,11 @@ export default function App() {
           )}
 
           {/* GARDEN VIEW */}
-          {kidView === 'garden' && (
+          {kidView === 'garden' && (() => {
+            const unlockedPlots = getUnlockedPlots(levelInfo.level)
+            const nextUnlockLevel = unlockedPlots < 8 ? levelInfo.level + 1 : null
+
+            return (
             <div>
               <div className="grid grid-cols-3 gap-3 mb-4">
                 <div className="bg-green-100 rounded-xl p-3 text-center">
@@ -1155,10 +1165,10 @@ export default function App() {
                   <p className="text-xl font-bold">{kid.garden.plots.filter(p => p.plant).length}</p>
                   <p className="text-xs text-gray-600">Growing</p>
                 </div>
-                <div className="bg-yellow-100 rounded-xl p-3 text-center">
-                  <Sun className="w-6 h-6 mx-auto text-yellow-600 mb-1" />
-                  <p className="text-xl font-bold">100%</p>
-                  <p className="text-xs text-gray-600">Health</p>
+                <div className="bg-blue-100 rounded-xl p-3 text-center">
+                  <Lock className="w-6 h-6 mx-auto text-blue-600 mb-1" />
+                  <p className="text-xl font-bold">{unlockedPlots}/8</p>
+                  <p className="text-xs text-gray-600">Unlocked</p>
                 </div>
                 <div className="bg-purple-100 rounded-xl p-3 text-center">
                   <Sparkles className="w-6 h-6 mx-auto text-purple-600 mb-1" />
@@ -1167,18 +1177,28 @@ export default function App() {
                 </div>
               </div>
 
+              {nextUnlockLevel && (
+                <div className="bg-blue-50 rounded-xl p-3 mb-4 text-center">
+                  <p className="text-sm text-blue-700">
+                    🔓 Reach <span className="font-bold">Level {nextUnlockLevel}</span> to unlock the next garden plot!
+                  </p>
+                </div>
+              )}
+
               <div className="bg-gradient-to-b from-green-200 to-green-300 rounded-2xl p-4 mb-4">
                 <div className="grid grid-cols-4 gap-2">
                   {kid.garden.plots.map((plot, index) => {
+                    const isUnlocked = index < unlockedPlots
                     const plantDisplay = plot.plant
                       ? (plot.stage >= 4 ? PLANT_TYPES[plot.plant]?.emoji : GROWTH_STAGES[plot.stage])
-                      : '🟫'
+                      : isUnlocked ? '🟫' : '🔒'
                     const canHarvest = plot.plant && plot.stage >= 4
 
                     return (
                       <div
                         key={index}
                         onClick={() => {
+                          if (!isUnlocked) return // Can't interact with locked plots
                           if (!plot.plant) {
                             const choice = prompt('Choose plant:\n1. Sunflower 🌻 (25pts)\n2. Tulip 🌷 (15pts)\n3. Rose 🌹 (35pts)\n4. Knowledge Bloom 📚 (30pts)', '1')
                             const plants = ['sunflower', 'tulip', 'rose', 'bookFlower']
@@ -1190,12 +1210,16 @@ export default function App() {
                             waterPlant(index)
                           }
                         }}
-                        className={`aspect-square rounded-xl flex flex-col items-center justify-center cursor-pointer transition transform hover:scale-105 ${
-                          plot.plant ? 'bg-green-100' : 'bg-amber-100 hover:bg-amber-200'
+                        className={`aspect-square rounded-xl flex flex-col items-center justify-center transition transform ${
+                          !isUnlocked
+                            ? 'bg-gray-300 opacity-60 cursor-not-allowed'
+                            : plot.plant
+                              ? 'bg-green-100 cursor-pointer hover:scale-105'
+                              : 'bg-amber-100 hover:bg-amber-200 cursor-pointer hover:scale-105'
                         }`}
                       >
                         <span className="text-3xl">{plantDisplay}</span>
-                        {plot.plant && (
+                        {plot.plant && isUnlocked && (
                           <div className="flex gap-1 mt-1">
                             <Droplets className="w-3 h-3 text-blue-500" />
                             {canHarvest && <Sparkles className="w-3 h-3 text-yellow-500" />}
@@ -1225,7 +1249,8 @@ export default function App() {
                 </div>
               )}
             </div>
-          )}
+            )
+          })()}
 
           {/* SETTINGS VIEW */}
           {kidView === 'settings' && (
