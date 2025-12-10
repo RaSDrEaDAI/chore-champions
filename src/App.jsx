@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react'
-import { 
-  Trophy, Star, Flame, Award, Plus, Edit2, Trash2, LogOut, Check, X, 
-  Gift, Crown, Target, Volume2, VolumeX, Palette, Sparkles, 
+import {
+  Trophy, Star, Flame, Award, Plus, Edit2, Trash2, LogOut, Check, X,
+  Gift, Crown, Target, Volume2, VolumeX, Palette, Sparkles,
   Book, BookOpen, GraduationCap, Flower2, Droplets, Leaf, PlusCircle, Sun,
-  Lock, User, ChevronRight
+  Lock, User, ChevronRight, ExternalLink
 } from 'lucide-react'
 
 // ============ CONSTANTS ============
@@ -53,6 +53,17 @@ const PRIZE_OPTIONS = [
   { name: 'Skip One Chore', points: 50 },
   { name: 'Stay Up Late (30min)', points: 60 },
 ]
+
+// External learning resources (kid-specific)
+const LEARNING_RESOURCES = {
+  sophia: {
+    mathTutor: {
+      name: '8th Grade Math Tutor',
+      url: 'https://gemini.google.com/gem/13DAOAjMybCBMuVwtAg12_l1rt_EMV4Bh',
+      description: 'Your personal AI math tutor for 8th grade curriculum'
+    }
+  }
+}
 
 // ============ UTILITIES ============
 const getLevelInfo = (lifetimePoints) => {
@@ -933,6 +944,27 @@ export default function App() {
           {/* LEARNING VIEW */}
           {kidView === 'learning' && (
             <div>
+              {/* Math Tutor Button - Only for Sophia */}
+              {kid.id === 'sophia' && LEARNING_RESOURCES.sophia?.mathTutor && (
+                <a
+                  href={LEARNING_RESOURCES.sophia.mathTutor.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block mb-4 p-4 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-xl text-white hover:opacity-90 transition transform hover:scale-[1.02]"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">🤖</span>
+                      <div>
+                        <h4 className="font-bold text-lg">{LEARNING_RESOURCES.sophia.mathTutor.name}</h4>
+                        <p className="text-sm opacity-90">{LEARNING_RESOURCES.sophia.mathTutor.description}</p>
+                      </div>
+                    </div>
+                    <ExternalLink className="w-5 h-5" />
+                  </div>
+                </a>
+              )}
+
               <h3 className="font-bold flex items-center gap-2 mb-3">
                 <GraduationCap className="w-5 h-5" /> Skill Trees
               </h3>
