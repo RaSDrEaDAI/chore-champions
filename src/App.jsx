@@ -203,6 +203,7 @@ export default function App() {
   const [showGoalModal, setShowGoalModal] = useState(null)
   const [editingTask, setEditingTask] = useState(null)
   const [soundEnabled, setSoundEnabled] = useState(true)
+  const [teachBackModal, setTeachBackModal] = useState(null) // { task, onComplete }
   
   // Load initial data
   const [{ tasks, kids }, setData] = useState(loadData)
@@ -792,6 +793,18 @@ export default function App() {
         </div>
       )}
 
+      {/* Teach Back Modal */}
+      {teachBackModal && (
+        <TeachBackModal
+          task={teachBackModal.task}
+          onSuccess={() => {
+            toggleTaskComplete(teachBackModal.task.id, true)
+            setTeachBackModal(null)
+          }}
+          onClose={() => setTeachBackModal(null)}
+        />
+      )}
+
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-3xl shadow-2xl p-6">
           {/* Header */}
@@ -1039,7 +1052,7 @@ export default function App() {
                           </button>
                           {task.teachBackBonus && (
                             <button
-                              onClick={() => toggleTaskComplete(task.id, true)}
+                              onClick={() => setTeachBackModal({ task })}
                               className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 text-white py-2 rounded-lg font-semibold text-sm hover:opacity-90"
                             >
                               🎓 Teach Back (+50%)
@@ -1462,6 +1475,138 @@ function GoalModal({ kid, onSave, onClose }) {
             Set Goal
           </button>
         </div>
+      </div>
+    </div>
+  )
+}
+
+function TeachBackModal({ task, onSuccess, onClose }) {
+  const [explanation, setExplanation] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [result, setResult] = useState(null) // { passed, feedback, score }
+
+  const handleSubmit = async () => {
+    if (!explanation.trim() || explanation.trim().length < 10) {
+      setResult({ passed: false, feedback: "Please write a bit more about what you learned! Try to explain it like you're teaching a friend." })
+      return
+    }
+
+    setIsLoading(true)
+    setResult(null)
+
+    try {
+      const response = await fetch('/api/evaluate-teachback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          explanation: explanation.trim(),
+          taskTitle: task.title,
+          subject: task.subject
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to evaluate')
+      }
+
+      const data = await response.json()
+      setResult(data)
+
+      if (data.passed) {
+        // Auto-close after showing success for a moment
+        setTimeout(() => {
+          onSuccess()
+        }, 2000)
+      }
+    } catch (error) {
+      console.error('Error evaluating teach back:', error)
+      setResult({
+        passed: false,
+        feedback: "Oops! Something went wrong. Let's try again or just click 'Done' for regular points."
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">🎓 Teach Back Time!</h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <div className="bg-purple-50 rounded-xl p-4 mb-4">
+          <p className="font-semibold text-purple-800">Task: {task.title}</p>
+          <p className="text-sm text-purple-600 mt-1">
+            Explain what you learned like you're teaching it to someone else!
+          </p>
+        </div>
+
+        {!result?.passed && (
+          <>
+            <textarea
+              value={explanation}
+              onChange={(e) => setExplanation(e.target.value)}
+              placeholder="I learned that... The most important thing is... For example..."
+              className="w-full p-4 border-2 rounded-xl focus:border-purple-500 focus:outline-none resize-none h-32 mb-4"
+              disabled={isLoading}
+            />
+
+            <div className="flex gap-3">
+              <button
+                onClick={onClose}
+                className="flex-1 py-3 rounded-xl font-semibold bg-gray-200 hover:bg-gray-300"
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSubmit}
+                disabled={isLoading || !explanation.trim()}
+                className="flex-1 py-3 rounded-xl font-semibold bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <span className="animate-spin">⏳</span> Checking...
+                  </>
+                ) : (
+                  '✨ Submit'
+                )}
+              </button>
+            </div>
+          </>
+        )}
+
+        {result && (
+          <div className={`rounded-xl p-4 ${result.passed ? 'bg-green-100' : 'bg-orange-100'}`}>
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-3xl">{result.passed ? '🎉' : '💭'}</span>
+              <h3 className={`font-bold text-lg ${result.passed ? 'text-green-800' : 'text-orange-800'}`}>
+                {result.passed ? 'Great Job!' : 'Almost There!'}
+              </h3>
+            </div>
+            <p className={result.passed ? 'text-green-700' : 'text-orange-700'}>
+              {result.feedback}
+            </p>
+            {result.passed && result.score && (
+              <p className="text-green-600 text-sm mt-2">
+                Understanding Score: {result.score}/10 ⭐
+              </p>
+            )}
+            {!result.passed && (
+              <button
+                onClick={() => setResult(null)}
+                className="mt-3 w-full py-2 rounded-lg font-semibold bg-orange-200 hover:bg-orange-300 text-orange-800"
+              >
+                Try Again
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
