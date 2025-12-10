@@ -62,6 +62,13 @@ const LEARNING_RESOURCES = {
       url: 'https://gemini.google.com/gem/13DAOAjMybCBMuVwtAg12_l1rt_EMV4Bh',
       description: 'Your personal AI math tutor for 8th grade curriculum'
     }
+  },
+  ella: {
+    mathTutor: {
+      name: '4th Grade Math Tutor',
+      url: 'https://gemini.google.com/gem/1AvTu_mAJjX6YJwEvvQA_F57L3ARl8thl',
+      description: 'Your personal AI math tutor for 4th grade curriculum'
+    }
   }
 }
 
@@ -944,20 +951,20 @@ export default function App() {
           {/* LEARNING VIEW */}
           {kidView === 'learning' && (
             <div>
-              {/* Math Tutor Button - Only for Sophia */}
-              {kid.id === 'sophia' && LEARNING_RESOURCES.sophia?.mathTutor && (
+              {/* Math Tutor Button */}
+              {LEARNING_RESOURCES[kid.id]?.mathTutor && (
                 <a
-                  href={LEARNING_RESOURCES.sophia.mathTutor.url}
+                  href={LEARNING_RESOURCES[kid.id].mathTutor.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block mb-4 p-4 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-xl text-white hover:opacity-90 transition transform hover:scale-[1.02]"
+                  className={`block mb-4 p-4 bg-gradient-to-r ${theme.primary} rounded-xl text-white hover:opacity-90 transition transform hover:scale-[1.02]`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <span className="text-3xl">🤖</span>
                       <div>
-                        <h4 className="font-bold text-lg">{LEARNING_RESOURCES.sophia.mathTutor.name}</h4>
-                        <p className="text-sm opacity-90">{LEARNING_RESOURCES.sophia.mathTutor.description}</p>
+                        <h4 className="font-bold text-lg">{LEARNING_RESOURCES[kid.id].mathTutor.name}</h4>
+                        <p className="text-sm opacity-90">{LEARNING_RESOURCES[kid.id].mathTutor.description}</p>
                       </div>
                     </div>
                     <ExternalLink className="w-5 h-5" />
